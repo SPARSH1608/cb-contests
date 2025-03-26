@@ -1,106 +1,106 @@
-import { app, shell, BrowserWindow, ipcMain, session } from "electron";
-import { join } from "path";
-import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import { app, shell, BrowserWindow, ipcMain ,session} from 'electron'
+import { join } from 'path'
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
-let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
-  mainWindow = new BrowserWindow({
+  // Create the browser window.
+  const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
     autoHideMenuBar: true,
+    ...(process.platform === 'linux' ? {  } : {}),
     webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
-      sandbox: false,
-    },
-  });
-
-  mainWindow.webContents.openDevTools();
-
-  mainWindow.on("ready-to-show", () => {
-    mainWindow.show();
-  });
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+  
+ mainWindow.webContents.openDevTools();
+  mainWindow.on('ready-to-show', () => {
+    mainWindow.show()
+  })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: "deny" };
-  });
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
 
+  // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
 
-// ✅ Add this function to handle deep links
-function handleDeepLink(url: string) {
-  if (!url || typeof url !== "string" || !url.startsWith("myapp://")) {
-    console.error("Invalid deep link URL:", url);
-    return;
-  }
-
-  console.log("Received deep link:", url);
-
-  try {
-    // ✅ Parse the URL safely
-    const parsedUrl = new URL(url);
-    const params = new URLSearchParams(parsedUrl.search);
-
-    const cb_auth = params.get("cb_auth");
-    const one_auth = params.get("one_auth");
-    const contestId = params.get("contestId") || "default_contest_id";
-    const contentId = params.get("contentId") || "1";
-
-    console.log("CB Auth:", cb_auth);
-    console.log("One Auth:", one_auth);
-    console.log("Contest ID:", contestId);
-    console.log("Content ID:", contentId);
-
-    // ✅ Send data to renderer (frontend)
-    if (mainWindow) {
-      mainWindow.webContents.send("contest-data", { cb_auth, one_auth, contestId, contentId });
-    }
-  } catch (error) {
-    console.error("Error parsing deep link URL:", error);
-  }
-}
-
-// ✅ Register the deep link protocol
-app.setAsDefaultProtocolClient("electron-app");
-
-// ✅ Listen for deep links when the app is already running
-app.on("open-url", (event, url) => {
-  event.preventDefault();
-  handleDeepLink(url);
-});
-
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId("com.electron");
+  // Set app user model id for windows
+  electronApp.setAppUserModelId('com.electron')
 
-  app.on("browser-window-created", (_, window) => {
-    optimizer.watchWindowShortcuts(window);
+  // Default open or close DevTools by F12 in development
+  // and ignore CommandOrControl + R in production.
+  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+  app.on('browser-window-created', (_, window) => {
+    optimizer.watchWindowShortcuts(window)
+  })
+
+  // IPC test
+  ipcMain.on('ping', () => console.log('pong'))
+
+  createWindow()
+  const cookies = [
+    {
+      name: "cb_auth",
+      value: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJ1c2VybmFtZSI6InNwYXJzaGdvZWxrIiwiZmlyc3RuYW1lIjoiU3BhcnNoIiwibGFzdG5hbWUiOiJHb2VsIiwiZ2VuZGVyIjoiTUFMRSIsInBob3RvIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS3R2SUNXWTRHcHJucFhTWkxpVmY2bi1pdTNablFlTkRrNUJEaFJIQ2pqdlBBWTFmT1c9czk2LWMiLCJlbWFpbCI6InNwYXJzaGdvZWxrQGdtYWlsLmNvbSIsIm1vYmlsZV9udW1iZXIiOiIrOTEtOTMxOTU1MTYwOCIsIndoYXRzYXBwX251bWJlciI6bnVsbCwicm9sZSI6bnVsbCwidmVyaWZpZWRlbWFpbCI6InNwYXJzaGdvZWxrQGdtYWlsLmNvbSIsInZlcmlmaWVkbW9iaWxlIjpudWxsLCJyZWZlcnJhbENvZGUiOiJTUEExSkoiLCJyZWZlcnJlZEJ5IjpudWxsLCJncmFkdWF0aW9uWWVhciI6MjAyNSwiYXBwYXJlbEdvb2RpZXNTaXplIjpudWxsLCJtYXJrZXRpbmdfbWV0YSI6bnVsbCwiY3JlYXRlZEF0IjoiMjAyNS0wMi0xMlQxMDoyMzo1My40MjRaIiwidXBkYXRlZEF0IjoiMjAyNS0wMi0xMlQxMDoyNDozNC44MjFaIiwiZGVsZXRlZEF0IjpudWxsLCJjbGllbnQiOiJ3ZWIiLCJjbGllbnROYW1lIjoibG9jYWxob3N0IiwiY2xpZW50SWQiOiIxMjM0NTY3ODkwIiwidXVpZCI6ImQzZGRiYTljLWU4YTUtNDVlZi1hMDdjLWY2YWE4YjdhMzMyMiIsInNlc3Npb25TdGFydGVkQXQiOiIyMDI1LTAzLTI1VDIwOjQ5OjIzLjYwOVoiLCJpYXQiOjE3NDI5MzU3NjMsImV4cCI6MTc0MzAyMjE2M30.rAYR93LmxXHque7SkZva5VKKTluC9XPowzz1eBCZUTTJQkk7b_S_j_Lut2IxW-DZpvROIFJDeiNU7ozlmE7ZZMCGJ5FYWvbxRb4Z6dAP99UZ2CP2t51VEjLpfzWY6RcgoS4vXNcVx2npdB_aU3434HcPe6RUDEQknh8Y7juLgeAvuWdQgr7VrED96IRoTxGmAtU-vCV1egpppV-GZ15ziOT3AqbzUZF1QMCnLDVy4DQCG1_SsYkpK-ZHo4oMqYTPkDfQGurxcEMqcxh3t0AIVugCxSYX3oZahBFAurYZOylkon3Icr9nRqLIQHXnXQgp5chFyBMNP85Wlc6qmd_o7A",
+      domain: "localhost",
+      url: "http://localhost:5173",
+      path: "/",
+      secure: false, // Set to `true` in production if using HTTPS
+      httpOnly: false,
+    },
+    {
+      name: "one_auth",
+      value: "s%3AwMy8X0jF4hLnTkqYDTqgc8IrNTVGE3qz.sH8rUo1f3ZmZcIWJzEEw9jUIu%2BXhgONGxM49ccu8qyw",
+      domain: "localhost",
+      url: "http://localhost:5173",
+      path: "/",
+      secure: false,
+      httpOnly: false,
+    },
+  ];
+
+  // Set each cookie
+  cookies.forEach((cookie) => {
+    session.defaultSession.cookies.set(cookie).then(
+      () => {
+        console.log(`Cookie set: ${cookie.name}`);
+      },
+      (error) => {
+        console.error(`Error setting cookie ${cookie.name}:`, error);
+      }
+    );
   });
+  app.on('activate', function () {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
 
-  ipcMain.on("ping", () => console.log("pong"));
-
-  createWindow();
-
-  app.on("activate", function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-
-  // ✅ Handle deep link when app is launched from a URL
-  if (process.argv.length > 1) {
-    handleDeepLink(process.argv[1]);
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
   }
-});
+})
 
-// Quit when all windows are closed (except macOS)
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and require them here.

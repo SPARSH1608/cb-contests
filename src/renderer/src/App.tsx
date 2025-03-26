@@ -7,20 +7,20 @@ import Contest from "./pages/Contests";
 import Attempt from "./pages/ContestAttempt";
 import { useEffect, useState } from "react";
 export default function App(): JSX.Element {
-  const [cookies, setCookies] = useState<{ cb_auth?: string; one_auth?: string }>({});
-  useEffect(() => {
-    async function getCookies() {
-      const cbAuthCookie = await session.defaultSession.cookies.get({ name: "cb_auth" });
-      const oneAuthCookie = await session.defaultSession.cookies.get({ name: "one_auth" });
+  // const [cookies, setCookies] = useState<{ cb_auth?: string; one_auth?: string }>({});
+  // useEffect(() => {
+  //   async function getCookies() {
+  //     const cbAuthCookie = await session.defaultSession.cookies.get({ name: "cb_auth" });
+  //     const oneAuthCookie = await session.defaultSession.cookies.get({ name: "one_auth" });
 
-      setCookies({
-        cb_auth: cbAuthCookie.length ? cbAuthCookie[0].value : null,
-        one_auth: oneAuthCookie.length ? oneAuthCookie[0].value : null,
-      });
-    }
+  //     setCookies({
+  //       cb_auth: cbAuthCookie.length ? cbAuthCookie[0].value : null,
+  //       one_auth: oneAuthCookie.length ? oneAuthCookie[0].value : null,
+  //     });
+  //   }
 
-    getCookies();
-  }, []);
+  //   getCookies();
+  // }, []);
 
   return (
     <Router>
