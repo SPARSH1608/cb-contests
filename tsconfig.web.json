@@ -1,0 +1,21 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "src/renderer/src/env.d.ts",
+    "src/renderer/src/**/*",
+    "src/renderer/src/**/*.tsx",
+    "src/preload/*.d.ts"
+, "src/renderer/components"  ],
+"compilerOptions": {
+  "target": "ESNext",
+  "module": "ESNext",
+  "jsx": "react-jsx",
+  "strict": false,
+  "noEmit": false,
+  "skipLibCheck": true,
+  "noImplicitAny": false,
+  "noUnusedLocals": false,
+  "noUnusedParameters": false,
+  "esModuleInterop": true
+},
+}
